@@ -1,10 +1,10 @@
 # Billing Manager
 
 > Sistema de gestão de faturamento e assinaturas multi-tenant, rodando 100% Serverless na AWS.
-
+<!-- 
 [![Demonstração da Arquitetura](https://img.youtube.com/vi/6dii4RSVOYc/maxresdefault.jpg)](https://youtu.be/6dii4RSVOYc?si=gfCWHd2ZUcf_xzk8)
 
-> **Clique na imagem acima** para assistir à demonstração em vídeo da arquitetura, decisões de FinOps e execução do projeto (10 minutos).
+> **Clique na imagem acima** para assistir à demonstração em vídeo da arquitetura, decisões de FinOps e execução do projeto (10 minutos). -->
 
 ---
 
