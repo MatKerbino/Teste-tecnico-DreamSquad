@@ -1,0 +1,9 @@
+version: 0.1
+
+projects:
+  - path: .
+    name: billing-manager
+    terraform_vars:
+      aws_region: "us-east-1"
+      project_name: "billing-manager"
+      environment: "production"

@@ -1,0 +1,57 @@
+name: Terraform CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    terraform:
+        name: Lint & Validate Terraform
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v3
+              with:
+                  terraform_version: "1.6"
+
+            - name: Terraform Format Check
+              run: terraform fmt -recursive -check
+
+            - name: Terraform Init (no backend)
+              run: terraform init -backend=false
+
+            - name: Terraform Validate
+              run: terraform validate
+
+    go-lint:
+        name: Go Lint & Format
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+            - name: Setup Go
+              uses: actions/setup-go@v5
+              with:
+                  go-version: "1.22"
+            - name: Go Format Check
+              run: |
+                  if [ "$(gofmt -l src/backend src/lambda | wc -l)" -gt 0 ]; then
+                    echo "Go files are not formatted. Run 'go fmt ./...'"
+                    gofmt -l src/backend src/lambda
+                    exit 1
+                  fi
+
+    docker-build:
+        name: Build Backend Image
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+            - name: Build backend image
+              run: docker build -t billing-manager-backend:ci ./src/backend

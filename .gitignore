@@ -1,0 +1,46 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+tfplan
+*.tfplan
+.terraformrc
+terraform.rc
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Variables with secrets (use terraform.tfvars.example as reference)
+terraform.tfvars
+*.auto.tfvars
+
+# Go
+bin/
+*.exe
+*.test
+*.out
+bootstrap
+*.zip
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+
+# Docker
+*.tar
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,99 @@
+services:
+  localstack:
+    image: localstack/localstack:latest
+    container_name: billing-manager-aws
+    ports:
+      - "4566:4566"           
+    environment:
+      - SERVICES=dynamodb,s3
+      - DEBUG=1
+      - AWS_DEFAULT_REGION=us-east-1
+      - PERSISTENCE=1
+      - ACTIVATE_PRO=0
+      - DOCKER_FLAGS=--privileged
+    volumes:
+      - ./localstack_data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+
+  setup-db:
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+      target: builder
+    container_name: billing-manager-setup
+    environment:
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - AWS_REGION=us-east-1
+      - DYNAMODB_ENDPOINT=http://localstack:4566
+      - S3_ENDPOINT=http://localstack:4566
+      - DYNAMODB_TABLE=billing-manager_Data
+      - BILLING_BUCKET=billing-reports
+      - BACKUP_BUCKET=database-backups
+    command: go run ./cmd/setup-db/main.go
+    depends_on:
+      localstack:
+        condition: service_healthy
+
+  seed:
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+      target: builder
+    container_name: billing-manager-seed
+    environment:
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - AWS_REGION=us-east-1
+      - DYNAMODB_ENDPOINT=http://localstack:4566
+      - DYNAMODB_TABLE=billing-manager_Data
+    command: go run ./seed/seed.go
+    depends_on:
+      localstack:
+        condition: service_healthy
+      setup-db:
+        condition: service_completed_successfully
+
+  backend:
+    image: cosmtrek/air
+    container_name: billing-manager-backend
+    working_dir: /app
+    ports:
+      - "8080:8080"
+    environment:
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - AWS_REGION=us-east-1
+      - DYNAMODB_ENDPOINT=http://localstack:4566
+      - S3_ENDPOINT=http://localstack:4566
+      - DYNAMODB_TABLE=billing-manager_Data
+      - BILLING_BUCKET=billing-reports
+      - BACKUP_BUCKET=database-backups
+      - PORT=8080
+      - CRON_SECRET=billing-manager-cron-secret-change-in-prod
+    volumes:
+      - ./src/backend:/app
+    depends_on:
+      localstack:
+        condition: service_healthy
+      setup-db:
+        condition: service_completed_successfully
+
+  frontend:
+    image: node:20-alpine
+    container_name: billing-manager-frontend
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+    volumes:
+      - ./src/frontend:/app
+    command: sh -c "npm install && npm run dev"
+    depends_on:
+      - backend
